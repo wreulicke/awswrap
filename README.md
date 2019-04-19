@@ -23,3 +23,10 @@ $ awswrap aws sts get-caller-identity
 
 Read all profiles in `~/.aws/credentials` and execute a command with environment provided AWS_PROFILE.
 
+## TODO
+
+* Add CI
+* Add Linter
+* Add test
+* Refactor
+* Release
