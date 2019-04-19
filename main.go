@@ -208,7 +208,7 @@ func main() {
 						return err
 					}
 
-					ch = outputChannel(bufio.NewWriter(writer), writer)
+					ch = outputChannel(writer, writer)
 					openWriter[path] = ch
 				}
 			}
