@@ -18,7 +18,7 @@ func Action(c *cli.Context) error {
 	}
 	end := make(chan bool)
 	numProfiles := len(profiles)
-	outs := NewOutputs()
+	outs := NewOutputs(len(profiles))
 	defer outs.Close()
 	for _, p := range profiles {
 		ch, err := outs.Allocate(p, c.String("output"), c.Bool("strip-prefix"))

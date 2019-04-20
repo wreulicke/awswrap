@@ -11,15 +11,18 @@ import (
 
 type Outputs struct {
 	outs map[string]Output
+	done chan bool
 }
 
 type Output struct {
-	ch   chan<- string
-	done <-chan bool
+	ch chan<- string
 }
 
-func NewOutputs() *Outputs {
-	return &Outputs{outs: map[string]Output{}}
+func NewOutputs(len int) *Outputs {
+	return &Outputs{
+		outs: map[string]Output{},
+		done: make(chan bool, len),
+	}
 }
 
 func (o *Outputs) Allocate(p Profile, output string, stripPrefix bool) (chan<- string, error) {
@@ -50,9 +53,8 @@ func (o *Outputs) Allocate(p Profile, output string, stripPrefix bool) (chan<- s
 	if err != nil {
 		return nil, err
 	}
-	done := make(chan bool)
-	ch := outputChannel(decorator, f, done)
-	o.outs[path] = Output{ch, done}
+	ch := outputChannel(decorator, f, o.done)
+	o.outs[path] = Output{ch}
 	return ch, nil
 }
 
@@ -60,8 +62,8 @@ func (o *Outputs) Close() {
 	for _, out := range o.outs {
 		close(out.ch)
 	}
-	for _, out := range o.outs {
-		<-out.done
+	for range o.outs {
+		<-o.done
 	}
 }
 

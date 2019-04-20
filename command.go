@@ -26,6 +26,12 @@ func (c *Command) Exec(end chan<- bool, ch chan<- string) error {
 		return err
 	}
 
+	if err := c.Start(); err != nil {
+		stdout.Close()
+		stderr.Close()
+		return err
+	}
+
 	scout := bufio.NewScanner(stdout)
 	go func() {
 		for scout.Scan() {
@@ -43,10 +49,5 @@ func (c *Command) Exec(end chan<- bool, ch chan<- string) error {
 		stderr.Close()
 	}()
 
-	if err := c.Start(); err != nil {
-		stdout.Close()
-		stderr.Close()
-		return err
-	}
 	return nil
 }
