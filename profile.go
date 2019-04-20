@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,14 +26,35 @@ func LoadProfile() (map[string]Profile, error) { // TODO use struct
 	if err != nil {
 		return nil, err
 	}
-	// TODO ignore not-exist file
 	sharedCredentialsPath := envOrDefault(envSharedCredentialsFile, filepath.Join(home, ".aws", "credentials"))
 	configFilePath := envOrDefault(envAWSConfigFile, filepath.Join(home, ".aws", "config"))
-	f, err := ini.Load(sharedCredentialsPath, configFilePath)
+	files := []io.ReadCloser{}
+	f, err := os.Open(sharedCredentialsPath)
+	if err != nil {
+		// credentials is required.
+		return nil, err
+	}
+	files = append(files, f)
+
+	f, err = os.Open(configFilePath)
+	// config file is not required.
+	if os.IsExist(err) {
+		files = append(files, f)
+	}
+
+	if len(files) == 1 {
+		iniFile, err := ini.Load(files[0])
+		if err != nil {
+			return nil, err
+		}
+		return profiles(iniFile), nil
+	}
+
+	iniFile, err := ini.Load(files[0], files[1:])
 	if err != nil {
 		return nil, err
 	}
-	return profiles(f), nil
+	return profiles(iniFile), nil
 }
 
 type Profile struct {
@@ -47,8 +69,10 @@ func profiles(i *ini.File) map[string]Profile { // TODO use struct
 		if strings.HasPrefix(name, "profile ") {
 			name = strings.TrimPrefix(name, "profile ")
 		} else if name == "DEFAULT" {
-			name = "default"
+			// ignore default
+			continue
 		}
+
 		if p, found := profiles[name]; found {
 			if s.HasKey("region") {
 				k, _ := s.GetKey("region")
