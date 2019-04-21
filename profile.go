@@ -39,7 +39,7 @@ func LoadProfile() (map[string]Profile, error) { // TODO use struct
 
 	f, err = os.Open(configFilePath)
 	// config file is not required.
-	if os.IsExist(err) {
+	if err == nil {
 		files = append(files, f)
 	}
 
@@ -51,7 +51,7 @@ func LoadProfile() (map[string]Profile, error) { // TODO use struct
 		return profiles(iniFile), nil
 	}
 
-	iniFile, err := ini.Load(files[0], files[1:])
+	iniFile, err := ini.Load(files[0], files[1])
 	if err != nil {
 		return nil, err
 	}
