@@ -11,7 +11,7 @@ setup:
 	# for build
 	GO111MODULE=off go get github.com/mitchellh/gox
 	# for lint
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sudo sh -s -- -b $(go env GOPATH)/bin vX.Y.Z
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sudo sh -s -- -b $(go env GOPATH)/bin v1.16.0
 
 format:
 	GO111MODULE=on go fmt ./...
