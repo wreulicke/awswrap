@@ -10,8 +10,9 @@ import (
 	"gopkg.in/ini.v1"
 )
 
-var envSharedCredentialsFile = "AWS_SHARED_CREDENTIALS_FILE"
-var envAWSConfigFile = "AWS_CONFIG_FILE"
+const envSharedCredentialsFile = "AWS_SHARED_CREDENTIALS_FILE"
+
+const envAWSConfigFile = "AWS_CONFIG_FILE"
 
 func envOrDefault(key string, d string) string {
 	v := os.Getenv(key)

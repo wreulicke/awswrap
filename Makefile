@@ -10,9 +10,14 @@ VERSION_FLAG=\"main.version=$VERSION\"
 setup:
 	# for build
 	GO111MODULE=off go get github.com/mitchellh/gox
+	# for lint
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sudo sh -s -- -b $(go env GOPATH)/bin vX.Y.Z
 
 format:
 	GO111MODULE=on go fmt ./...
+
+lint: 
+	golangci-lint run --enable-all
 
 test:
 	go test ./... 

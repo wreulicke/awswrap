@@ -1,0 +1,16 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.12
+    steps:
+      - checkout
+      - run: make lint
+      - run: make setup
+      - run: make test
+      - run: make build-all
+      - store_artifacts:
+          path: build
+          destination: result
+      - store_test_results:
+          path: build
