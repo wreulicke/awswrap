@@ -25,8 +25,5 @@ Read all profiles in `~/.aws/credentials` and execute a command with environment
 
 ## TODO
 
-* Add CI
-* Add Linter
 * Add test
-* Refactor
 * Release
