@@ -36,9 +36,9 @@ func Action(c *cli.Context) error {
 	signal.Notify(interrupt, os.Interrupt)
 	for {
 		select {
-		case _ = <-interrupt:
+		case <-interrupt:
 			os.Exit(0) // TODO more handling
-		case _ = <-end:
+		case <-end:
 			numProfiles--
 			if numProfiles == 0 {
 				return nil
