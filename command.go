@@ -16,7 +16,7 @@ func NewCommand(p Profile, args []string) *Command {
 	return &Command{c}
 }
 
-func (c *Command) Exec(end chan<- bool, ch chan<- string) error {
+func (c *Command) Exec(end <-chan struct{}, ch chan<- string) error {
 	stdout, err := c.StdoutPipe()
 	if err != nil {
 		return err
@@ -38,7 +38,7 @@ func (c *Command) Exec(end chan<- bool, ch chan<- string) error {
 			ch <- scout.Text()
 		}
 		stdout.Close()
-		end <- true
+		<-end
 	}()
 
 	scerr := bufio.NewScanner(stderr)
