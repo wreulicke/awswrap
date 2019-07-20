@@ -27,7 +27,7 @@ func Action(c *cli.Context) error {
 	endCh := make(chan struct{}, concurrency)
 	go func() {
 		for _, p := range profiles {
-			endCh<- struct{}{}
+			endCh <- struct{}{}
 			ch, err := outs.Allocate(p, c.String("output"), c.Bool("strip-prefix"))
 			if err != nil {
 				fmt.Println(err)
@@ -69,7 +69,7 @@ func NewApp() *cli.App {
 			Usage: "strip-prefix",
 		},
 		cli.IntFlag{
-			Name: "concurrency, c",
+			Name:  "concurrency, c",
 			Usage: "concurrency for command. default is cpu count",
 			Value: runtime.NumCPU(),
 		},
