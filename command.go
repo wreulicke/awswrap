@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"os/exec"
+	"sync"
 )
 
 type Command struct {
@@ -16,7 +17,7 @@ func NewCommand(p Profile, args []string) *Command {
 	return &Command{c}
 }
 
-func (c *Command) Exec(end <-chan struct{}, ch chan<- string) error {
+func (c *Command) Exec(end <-chan struct{}, ch chan<- string, group *sync.WaitGroup) error {
 	stdout, err := c.StdoutPipe()
 	if err != nil {
 		return err
@@ -32,12 +33,14 @@ func (c *Command) Exec(end <-chan struct{}, ch chan<- string) error {
 		return err
 	}
 
+	group.Add(2)
 	scout := bufio.NewScanner(stdout)
 	go func() {
 		for scout.Scan() {
 			ch <- scout.Text()
 		}
 		stdout.Close()
+		group.Done()
 		<-end
 	}()
 
@@ -47,6 +50,7 @@ func (c *Command) Exec(end <-chan struct{}, ch chan<- string) error {
 			ch <- scerr.Text()
 		}
 		stderr.Close()
+		group.Done()
 	}()
 
 	return nil

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"sync"
 
 	"github.com/urfave/cli"
 )
@@ -20,21 +21,21 @@ func Action(c *cli.Context) error {
 	}
 	end := make(chan bool)
 	outs := NewOutputs(len(profiles))
-	defer outs.Close()
 
 	concurrency := c.Int("concurrency")
-
-	endCh := make(chan struct{}, concurrency)
+	group := &sync.WaitGroup{}
+	execGroup := &sync.WaitGroup{}
 	go func() {
+		endCh := make(chan struct{}, concurrency)
 		for _, p := range profiles {
 			endCh <- struct{}{}
-			ch, err := outs.Allocate(p, c.String("output"), c.Bool("strip-prefix"))
+			ch, err := outs.Allocate(p, c.String("output"), c.Bool("strip-prefix"), group)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 			c := NewCommand(p, c.Args())
-			err = c.Exec(endCh, ch)
+			err = c.Exec(endCh, ch, execGroup)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -44,13 +45,14 @@ func Action(c *cli.Context) error {
 
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
-	for {
-		select {
-		case <-interrupt:
-			os.Exit(0) // TODO more handling
-		case <-end:
-			return nil
-		}
+	select {
+	case <-interrupt:
+		return nil
+	case <-end:
+		execGroup.Wait()
+		outs.Close()
+		group.Wait()
+		return nil
 	}
 }
 

@@ -6,12 +6,24 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/ioutil"
 	"os"
+	"sync"
 )
 
+type Flusher interface {
+	Flush() error
+}
+
+type FlushableWriteCloser struct {
+	io.Writer
+	io.Closer
+	Flusher
+}
+
 type Outputs struct {
-	outs map[string]Output
-	done chan bool
+	outs     map[string]Output
+	channels []chan string
 }
 
 type Output struct {
@@ -21,25 +33,30 @@ type Output struct {
 func NewOutputs(len int) *Outputs {
 	return &Outputs{
 		outs: map[string]Output{},
-		done: make(chan bool, len),
 	}
 }
 
-func (o *Outputs) Allocate(p Profile, output string, stripPrefix bool) (chan<- string, error) {
+type NopFlusher struct {
+}
+
+func (NopFlusher) Flush() error {
+	return nil
+}
+
+func (o *Outputs) add(ch chan string) {
+	o.channels = append(o.channels, ch)
+}
+
+func (o *Outputs) Allocate(p Profile, output string, stripPrefix bool, group *sync.WaitGroup) (chan<- string, error) {
 	decorator := makeDecorator(stripPrefix, p.Name)
 	if output == "" {
 		stdch := make(chan string)
-		go func() {
-			for {
-				s, more := <-stdch
-				if s != "" {
-					fmt.Println(decorator(s))
-				}
-				if !more {
-					return
-				}
-			}
-		}()
+		outputChannel(decorator, FlushableWriteCloser{
+			Writer:  os.Stdout,
+			Flusher: &NopFlusher{},
+			Closer:  ioutil.NopCloser(nil),
+		}, stdch, group)
+		o.add(stdch)
 		return stdch, nil
 	}
 	path, err := makeOutputPath(output, p)
@@ -53,17 +70,21 @@ func (o *Outputs) Allocate(p Profile, output string, stripPrefix bool) (chan<- s
 	if err != nil {
 		return nil, err
 	}
-	ch := outputChannel(decorator, f, o.done)
+	ch := make(chan string)
+	o.add(ch)
+	w := bufio.NewWriter(f)
+	outputChannel(decorator, FlushableWriteCloser{
+		Writer:  w,
+		Flusher: w,
+		Closer:  f,
+	}, ch, group)
 	o.outs[path] = Output{ch}
 	return ch, nil
 }
 
 func (o *Outputs) Close() {
-	for _, out := range o.outs {
-		close(out.ch)
-	}
-	for range o.outs {
-		<-o.done
+	for _, ch := range o.channels {
+		close(ch)
 	}
 }
 
@@ -81,22 +102,22 @@ func makeOutputPath(src string, p Profile) (string, error) {
 	return buf.String(), nil
 }
 
-func outputChannel(decorator func(string) string, writer io.WriteCloser, done chan<- bool) chan<- string {
-	ch := make(chan string)
-	w := bufio.NewWriter(writer)
+func outputChannel(decorator func(string) string, w FlushableWriteCloser, ch <-chan string, group *sync.WaitGroup) {
+	group.Add(1)
 	go func() {
 		for {
 			s, more := <-ch
-			fmt.Fprintln(w, decorator(s))
+			if more {
+				fmt.Fprintln(w, decorator(s))
+			}
 			if !more {
 				w.Flush()
-				writer.Close()
-				done <- true
+				w.Close()
+				group.Done()
 				return
 			}
 		}
 	}()
-	return ch
 }
 
 func makeDecorator(stripPrefix bool, p string) func(string) string {
