@@ -1,17 +1,19 @@
-package main
+package command
 
 import (
 	"bufio"
 	"os"
 	"os/exec"
 	"sync"
+
+	"github.com/wurelicke/awswrap/profile"
 )
 
 type Command struct {
 	*exec.Cmd
 }
 
-func NewCommand(p Profile, args []string) *Command {
+func NewCommand(p profile.Profile, args []string) *Command {
 	c := exec.Command(args[0], args[1:]...)
 	c.Env = append(os.Environ(), "AWS_PROFILE="+p.Name)
 	return &Command{c}

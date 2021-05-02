@@ -1,13 +1,14 @@
 package main
 
 import (
-	"log"
 	"os"
+
+	"github.com/wurelicke/awswrap/cmd"
 )
 
 func main() {
-	err := NewApp().Run(os.Args)
-	if err != nil {
-		log.Fatal(err)
+	cmd := cmd.NewRootCommand()
+	if err := cmd.Execute(); err != nil {
+		os.Exit(1)
 	}
 }
