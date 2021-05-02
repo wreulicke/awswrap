@@ -65,6 +65,7 @@ func (o *Outputs) Allocate(p profile.Profile, output string, stripPrefix bool) (
 	if err != nil {
 		return nil, err
 	}
+	// TODO fix incorrect decoration if output is same file
 	if o, found := o.outs[path]; found {
 		return o.ch, nil
 	}
