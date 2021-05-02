@@ -8,6 +8,8 @@ import (
 	"io"
 	"os"
 	"sync"
+
+	"github.com/wurelicke/awswrap/profile"
 )
 
 type Flusher interface {
@@ -46,7 +48,7 @@ func (o *Outputs) add(ch chan string) {
 	o.channels = append(o.channels, ch)
 }
 
-func (o *Outputs) Allocate(p Profile, output string, stripPrefix bool, group *sync.WaitGroup) (chan<- string, error) {
+func (o *Outputs) Allocate(p profile.Profile, output string, stripPrefix bool, group *sync.WaitGroup) (chan<- string, error) {
 	decorator := makeDecorator(stripPrefix, p.Name)
 	if output == "" {
 		stdch := make(chan string)
@@ -87,7 +89,7 @@ func (o *Outputs) Close() {
 	}
 }
 
-func makeOutputPath(src string, p Profile) (string, error) {
+func makeOutputPath(src string, p profile.Profile) (string, error) {
 	t := template.New(p.Name)
 	temp, err := t.Parse(src)
 	if err != nil {
