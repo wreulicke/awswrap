@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -43,10 +44,10 @@ func Action(c *cli.Context) error {
 		close(end)
 	}()
 
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
 	select {
-	case <-interrupt:
+	case <-ctx.Done():
 		return nil
 	case <-end:
 		execGroup.Wait()
