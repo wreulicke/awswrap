@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"os"
 	"sync"
 )
@@ -54,7 +53,7 @@ func (o *Outputs) Allocate(p Profile, output string, stripPrefix bool, group *sy
 		outputChannel(decorator, FlushableWriteCloser{
 			Writer:  os.Stdout,
 			Flusher: &NopFlusher{},
-			Closer:  ioutil.NopCloser(nil),
+			Closer:  io.NopCloser(nil),
 		}, stdch, group)
 		o.add(stdch)
 		return stdch, nil
