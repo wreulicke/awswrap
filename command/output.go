@@ -25,13 +25,14 @@ type FlushableWriteCloser struct {
 type Outputs struct {
 	outs     map[string]Output
 	channels []chan string
+	group    sync.WaitGroup
 }
 
 type Output struct {
 	ch chan<- string
 }
 
-func NewOutputs(len int) *Outputs {
+func NewOutputs() *Outputs {
 	return &Outputs{
 		outs: map[string]Output{},
 	}
@@ -48,15 +49,15 @@ func (o *Outputs) add(ch chan string) {
 	o.channels = append(o.channels, ch)
 }
 
-func (o *Outputs) Allocate(p profile.Profile, output string, stripPrefix bool, group *sync.WaitGroup) (chan<- string, error) {
+func (o *Outputs) Allocate(p profile.Profile, output string, stripPrefix bool) (chan<- string, error) {
 	decorator := makeDecorator(stripPrefix, p.Name)
 	if output == "" {
 		stdch := make(chan string)
-		outputChannel(decorator, FlushableWriteCloser{
+		o.startPipe(decorator, FlushableWriteCloser{
 			Writer:  os.Stdout,
 			Flusher: &NopFlusher{},
 			Closer:  io.NopCloser(nil),
-		}, stdch, group)
+		}, stdch)
 		o.add(stdch)
 		return stdch, nil
 	}
@@ -74,11 +75,11 @@ func (o *Outputs) Allocate(p profile.Profile, output string, stripPrefix bool, g
 	ch := make(chan string)
 	o.add(ch)
 	w := bufio.NewWriter(f)
-	outputChannel(decorator, FlushableWriteCloser{
+	o.startPipe(decorator, FlushableWriteCloser{
 		Writer:  w,
 		Flusher: w,
 		Closer:  f,
-	}, ch, group)
+	}, ch)
 	o.outs[path] = Output{ch}
 	return ch, nil
 }
@@ -87,6 +88,7 @@ func (o *Outputs) Close() {
 	for _, ch := range o.channels {
 		close(ch)
 	}
+	o.group.Wait()
 }
 
 func makeOutputPath(src string, p profile.Profile) (string, error) {
@@ -103,8 +105,8 @@ func makeOutputPath(src string, p profile.Profile) (string, error) {
 	return buf.String(), nil
 }
 
-func outputChannel(decorator func(string) string, w FlushableWriteCloser, ch <-chan string, group *sync.WaitGroup) {
-	group.Add(1)
+func (o *Outputs) startPipe(decorator func(string) string, w FlushableWriteCloser, ch <-chan string) {
+	o.group.Add(1)
 	go func() {
 		for {
 			s, more := <-ch
@@ -114,7 +116,7 @@ func outputChannel(decorator func(string) string, w FlushableWriteCloser, ch <-c
 			if !more {
 				w.Flush()
 				w.Close()
-				group.Done()
+				o.group.Done()
 				return
 			}
 		}

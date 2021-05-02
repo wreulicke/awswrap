@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"os"
 	"os/exec"
-	"sync"
 
 	"github.com/wurelicke/awswrap/profile"
 )
@@ -19,7 +18,7 @@ func NewCommand(p profile.Profile, args []string) *Command {
 	return &Command{c}
 }
 
-func (c *Command) Exec(end <-chan struct{}, ch chan<- string, group *sync.WaitGroup) error {
+func (c *Command) Exec(ch chan<- string) error {
 	stdout, err := c.StdoutPipe()
 	if err != nil {
 		return err
@@ -35,15 +34,12 @@ func (c *Command) Exec(end <-chan struct{}, ch chan<- string, group *sync.WaitGr
 		return err
 	}
 
-	group.Add(2)
 	scout := bufio.NewScanner(stdout)
 	go func() {
 		for scout.Scan() {
 			ch <- scout.Text()
 		}
 		stdout.Close()
-		group.Done()
-		<-end
 	}()
 
 	scerr := bufio.NewScanner(stderr)
@@ -52,8 +48,7 @@ func (c *Command) Exec(end <-chan struct{}, ch chan<- string, group *sync.WaitGr
 			ch <- scerr.Text()
 		}
 		stderr.Close()
-		group.Done()
 	}()
 
-	return nil
+	return c.Wait()
 }

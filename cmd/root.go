@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"runtime"
@@ -25,26 +24,32 @@ func NewRootCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			end := make(chan bool)
-			outs := command.NewOutputs(len(profiles))
+			outs := command.NewOutputs()
 
-			group := &sync.WaitGroup{}
 			execGroup := &sync.WaitGroup{}
-			go func() {
-				semaphore := make(chan struct{}, concurrency)
-				for _, p := range profiles {
-					semaphore <- struct{}{}
-					ch, err := outs.Allocate(p, output, stripPrefix, group)
-					if err != nil {
-						fmt.Println(err)
-						return
-					}
-					c := command.NewCommand(p, args)
-					err = c.Exec(semaphore, ch, execGroup)
-					if err != nil {
-						fmt.Println(err)
-					}
+			semaphore := make(chan struct{}, concurrency)
+			for _, p := range profiles {
+				semaphore <- struct{}{}
+				ch, err := outs.Allocate(p, output, stripPrefix)
+				if err != nil {
+					return err
 				}
+				c := command.NewCommand(p, args)
+				execGroup.Add(1)
+				go func() {
+					defer execGroup.Done()
+					err = c.Exec(ch)
+					if err != nil {
+						ch <- err.Error()
+					}
+					<-semaphore
+				}()
+			}
+
+			end := make(chan struct{})
+			go func() {
+				execGroup.Wait()
+				outs.Close()
 				close(end)
 			}()
 
@@ -54,9 +59,6 @@ func NewRootCommand() *cobra.Command {
 			case <-ctx.Done():
 				return nil
 			case <-end:
-				execGroup.Wait()
-				outs.Close()
-				group.Wait()
 				return nil
 			}
 		},
