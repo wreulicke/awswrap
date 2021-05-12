@@ -66,7 +66,7 @@ func NewRootCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&output, "output", "o", "", "output file template")
 	cmd.Flags().BoolVarP(&stripPrefix, "strip-prefix", "s", false, "strip prefix")
-	cmd.Flags().IntVarP(&concurrency, "concurrency", "c", runtime.NumCPU(), "concurrency for command. defualt is cpu count")
+	cmd.Flags().IntVarP(&concurrency, "concurrency", "c", runtime.NumCPU(), "concurrency for command. default is cpu count")
 
 	return cmd
 }

@@ -1,0 +1,38 @@
+linters:
+  disable:
+    - wsl
+    - gomnd
+    - gochecknoglobals
+    - godox
+    - funlen
+    - dupl
+    - lll
+    - testpackage
+    - nlreturn
+    - gochecknoinits
+    - goerr113
+    - stylecheck
+    - gci
+    - wrapcheck
+    - predeclared
+    - exhaustivestruct
+    - paralleltest
+    # deprecated
+    - interfacer
+    - maligned
+    - scopelint
+  enable-all: true
+run:
+  skip-dirs:
+    - build
+    - bin
+    - .git
+    - node_modules
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - dupl
+        - gosec
+        - goconst

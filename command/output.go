@@ -38,8 +38,7 @@ func NewOutputs() *Outputs {
 	}
 }
 
-type NopFlusher struct {
-}
+type NopFlusher struct{}
 
 func (NopFlusher) Flush() error {
 	return nil

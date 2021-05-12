@@ -17,7 +17,10 @@ format:
 	GO111MODULE=on go fmt ./...
 
 lint: 
-	golangci-lint run --enable-all --disable goconst
+	golangci-lint run
+
+lintfix: 
+	golangci-lint run --fix
 
 test:
 	go test ./... 

@@ -53,8 +53,7 @@ func TestLoadProfileWhenCredentialDoesNotExists(t *testing.T) {
 func TestLoadProfileWhenConfigFileIsNotExists(t *testing.T) {
 	os.Setenv(envSharedCredentialsFile, "testdata/data")
 	os.Setenv(envAWSConfigFile, "testdata/not_exists")
-	_, err := LoadProfile()
-	if err != nil {
+	if _, err := LoadProfile(); err != nil {
 		t.Error("Unexpected error", err)
 	}
 }
@@ -62,8 +61,7 @@ func TestLoadProfileWhenConfigFileIsNotExists(t *testing.T) {
 func TestLoadProfileWhenConfigAndCredentialsAreNotFound(t *testing.T) {
 	os.Setenv(envSharedCredentialsFile, "testdata/not_exists")
 	os.Setenv(envAWSConfigFile, "testdata/not_exists")
-	_, err := LoadProfile()
-	if err == nil {
+	if _, err := LoadProfile(); err == nil {
 		t.Error("There is unexpectedly no error")
 	}
 }
