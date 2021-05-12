@@ -63,6 +63,12 @@ type Profile struct {
 	Name   string
 }
 
+func (p Profile) WithRegion(region string) Profile {
+	newProfile := p
+	newProfile.Region = region
+	return newProfile
+}
+
 func profiles(i *ini.File) map[string]Profile { // TODO use struct
 	profiles := map[string]Profile{}
 	for _, s := range i.Sections() {

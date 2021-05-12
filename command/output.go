@@ -48,8 +48,9 @@ func (o *Outputs) add(ch chan string) {
 	o.channels = append(o.channels, ch)
 }
 
-func (o *Outputs) Allocate(p profile.Profile, output string, stripPrefix bool) (chan<- string, error) {
-	decorator := makeDecorator(stripPrefix, p.Name)
+type Decorator func(string) string
+
+func (o *Outputs) Allocate(p profile.Profile, output string, decorator Decorator) (chan<- string, error) {
 	if output == "" {
 		stdch := make(chan string)
 		o.startPipe(decorator, FlushableWriteCloser{
@@ -121,15 +122,4 @@ func (o *Outputs) startPipe(decorator func(string) string, w FlushableWriteClose
 			}
 		}
 	}()
-}
-
-func makeDecorator(stripPrefix bool, p string) func(string) string {
-	if stripPrefix {
-		return func(str string) string {
-			return str
-		}
-	}
-	return func(str string) string {
-		return fmt.Sprintf("[%s] \t%s", p, str)
-	}
 }

@@ -16,6 +16,9 @@ func NewCommand(p profile.Profile, args []string) *Command {
 	/* #nosec */
 	c := exec.Command(args[0], args[1:]...)
 	c.Env = append(os.Environ(), "AWS_PROFILE="+p.Name)
+	if p.Region != "" {
+		c.Env = append(c.Env, "AWS_REGION="+p.Region)
+	}
 	return &Command{c}
 }
 

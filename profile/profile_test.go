@@ -50,6 +50,7 @@ func TestLoadProfileWhenCredentialDoesNotExists(t *testing.T) {
 		return
 	}
 }
+
 func TestLoadProfileWhenConfigFileIsNotExists(t *testing.T) {
 	os.Setenv(envSharedCredentialsFile, "testdata/data")
 	os.Setenv(envAWSConfigFile, "testdata/not_exists")
